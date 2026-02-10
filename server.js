@@ -1,37 +1,28 @@
-const express = require('express');
+app.post('/webhook', async (req, res) => {
+  console.log("Incoming:", JSON.stringify(req.body, null, 2));
 
-const app = express();
-app.use(express.json());
+  const message =
+    req.body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 
-const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
+  if (message) {
+    const from = message.from;
 
-// ✅ Verify webhook (GET)
-app.get('/webhook', (req, res) => {
-  const mode = req.query['hub.mode'];
-  const token = req.query['hub.verify_token'];
-  const challenge = req.query['hub.challenge'];
-
-  if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-    console.log('Webhook verified');
-    return res.status(200).send(challenge);
+    await fetch(
+      `https://graph.facebook.com/v20.0/${process.env.PHONE_NUMBER_ID}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: from,
+          text: { body: "Hello 👋 Bot working!" }
+        })
+      }
+    );
   }
 
-  return res.sendStatus(403);
-});
-
-// ✅ Receive messages (POST)
-app.post('/webhook', (req, res) => {
-  console.log("Incoming:", JSON.stringify(req.body, null, 2));
-  return res.sendStatus(200);
-});
-
-// ✅ Test route
-app.get('/', (req, res) => {
-  res.send('Bot running');
-});
-
-// ✅ Start server (LAST)
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log('Server started on port', PORT);
+  res.sendStatus(200);
 });
