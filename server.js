@@ -1,7 +1,7 @@
 const { VertexAI } = require('@google-cloud/vertexai');
 const fs = require('fs');
 
-// Auth Hack: Create the key file from your Render Environment Variable
+// --- AUTH HACK FOR RENDER ---
 if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
     const keyPath = '/tmp/gcp-key.json';
     fs.writeFileSync(keyPath, process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
@@ -14,11 +14,17 @@ const vertexAI = new VertexAI({
 });
 
 const model = vertexAI.getGenerativeModel({
-  model: 'gemini-1.5-flash',
+  model: 'gemini-1.5-flash', // Using your credits!
+  systemInstruction: "You are the BuildByAlistar assistant. Help users with AI automation."
 });
 
 // Update your main chat function to use this:
 async function getAIResponse(userMessage) {
-  const result = await model.generateContent(userMessage);
-  return result.response.candidates[0].content.parts[0].text;
+  try {
+    const result = await model.generateContent(userMessage);
+    return result.response.candidates[0].content.parts[0].text;
+  } catch (error) {
+    console.error("Vertex AI Error:", error);
+    return "I'm having a technical moment. Please try again shortly!";
+  }
 }
